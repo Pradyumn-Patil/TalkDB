@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Admissions Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chat-container::-webkit-scrollbar { width: 4px; }
+        .chat-container::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 20px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="flex flex-col h-screen">
+        <header class="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 p-4">
+            <h1 class="text-xl font-bold text-center">Engineering Admissions AI Analyst 🧠</h1>
+        </header>
+
+        <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6">
+            <div id="chat-messages" class="space-y-6 max-w-4xl mx-auto">
+                <!-- Initial Bot Message -->
+                <div class="flex items-start gap-3 justify-start">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>
+                    <div class="max-w-lg lg:max-w-2xl rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none">
+                        <p>Hello! I am your AI data analyst. Ask me anything about the 2024 engineering admissions data. Here are some example questions you can ask:</p>
+                        <ul class="mt-2 list-disc list-inside space-y-1 text-gray-300">
+                            <li>What are the top 5 colleges by total intake?</li>
+                            <li>Show me colleges with highest admission rates</li>
+                            <li>Which regions have the most engineering seats?</li>
+                            <li>Compare government vs private college admissions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-gray-900 border-t border-gray-700 p-4 md:p-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Top 5 colleges by total intake</button>
+                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Show colleges with 100% admission rate</button>
+                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Compare government vs private colleges</button>
+                </div>
+                <div class="flex items-center bg-gray-800 rounded-xl p-2">
+                    <input id="chat-input" type="text" placeholder="Ask a question..." class="w-full bg-transparent focus:outline-none px-3" />
+                    <button id="send-button" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Send</button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatContainer = document.getElementById('chat-container');
+        const sampleButtons = document.querySelectorAll('.sample-question');
+
+        const sendMessage = async () => {
+            const query = chatInput.value.trim();
+            if (!query) return;
+
+            appendMessage('user', query);
+            chatInput.value = '';
+            showLoadingIndicator();
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                removeLoadingIndicator();
+                const result = await response.json();
+
+                if (result.error) {
+                    appendMessage('bot', result.error);
+                } else if (result.data && result.data.rows) {
+                    // If we have tabular data
+                    appendMessage('bot', result.answer);
+                    appendTableMessage(result.data);
+                } else {
+                    // Text-only response
+                    appendMessage('bot', result.answer);
+                }
+            } catch (error) {
+                removeLoadingIndicator();
+                appendMessage('bot', 'Failed to connect to the server. Please ensure the Flask app is running.');
+                console.error('Error:', error);
+            }
+        };
+
+        const appendMessage = (sender, text) => {
+            const isBot = sender === 'bot';
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `flex items-start gap-3 ${isBot ? 'justify-start' : 'justify-end'}`;
+
+            let iconHtml = '';
+            if (isBot) {
+                iconHtml = `<div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>`;
+            }
+
+            const messageBubble = document.createElement('div');
+            messageBubble.className = `max-w-lg lg:max-w-2xl rounded-xl p-4 ${isBot ? 'bg-gray-800 text-gray-200 rounded-tl-none' : 'bg-blue-600 text-white rounded-br-none'}`;
+            
+            // Convert newlines to <br> tags
+            const formattedText = text.replace(/\n/g, '<br>');
+            messageBubble.innerHTML = `<p>${formattedText}</p>`;
+
+            messageWrapper.innerHTML = iconHtml;
+            messageWrapper.appendChild(messageBubble);
+            chatMessages.appendChild(messageWrapper);
+            scrollToBottom();
+        };
+
+        const appendTableMessage = (data) => {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = 'flex items-start gap-3 justify-start';
+            messageWrapper.innerHTML = `<div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>`;
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.className = 'max-w-full rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none';
+
+            let tableHtml = '<div class="overflow-x-auto rounded-lg border border-gray-700"><table class="min-w-full divide-y divide-gray-700"><thead class="bg-gray-800"><tr>';
+            data.headers.forEach(header => {
+                tableHtml += `<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">${header.replace(/_/g, ' ')}</th>`;
+            });
+            tableHtml += '</tr></thead><tbody class="bg-gray-900 divide-y divide-gray-700">';
+            data.rows.forEach(row => {
+                tableHtml += '<tr class="hover:bg-gray-800/50">';
+                data.headers.forEach(header => {
+                    const value = typeof row[header] === 'number' ? row[header].toLocaleString() : row[header];
+                    tableHtml += `<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-200">${value}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+            tableHtml += '</tbody></table></div>';
+
+            messageBubble.innerHTML = tableHtml;
+            messageWrapper.appendChild(messageBubble);
+            chatMessages.appendChild(messageWrapper);
+            scrollToBottom();
+        };
+
+        const showLoadingIndicator = () => {
+            const loadingHtml = `
+                <div id="loading-indicator" class="flex items-start gap-3 justify-start">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>
+                    <div class="max-w-lg lg:max-w-2xl rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.1s;"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                        </div>
+                    </div>
+                </div>`;
+            chatMessages.insertAdjacentHTML('beforeend', loadingHtml);
+            scrollToBottom();
+        };
+
+        const removeLoadingIndicator = () => {
+            const indicator = document.getElementById('loading-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        };
+
+        const scrollToBottom = () => {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        sampleButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                chatInput.value = button.textContent;
+                sendMessage();
+            });
+        });
+    </script>
+</body>
+</html>
