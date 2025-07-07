@@ -57,6 +57,76 @@ The application will be available at `http://localhost:5000`
 - `.env`: Environment variables (not in repo)
 - `EnggAdmissions2024.xlsx`: Data file (not in repo)
 
+## Roadmap & Future Improvements
+
+The current version is a basic implementation. Here's what's planned for the future:
+
+### ✅ Enhanced Data Processing
+
+#### Input Requirements
+- Support for standardized XLSX format with columns:
+  - College Name
+  - College Type
+  - Regional Office
+  - Course Name
+  - Intake
+  - Admissions
+
+#### Advanced Analytics
+- Automated calculation of derived metrics:
+  - Vacancies (Intake - Admissions)
+  - Percentage Vacancies ((Vacancies / Intake) * 100)
+- Sophisticated aggregation capabilities:
+  - Total intake calculations
+  - Average admissions
+  - Region-wise summaries
+- Advanced sorting and ranking
+- Multi-level filtering
+
+### ✅ Natural Language Processing Improvements
+
+Support for complex queries like:
+- "Which college has the highest intake?"
+- "Which colleges have maximum admissions?"
+- "Which Government colleges have the minimum percentage of vacancies?"
+- "What are the top 5 colleges with the minimum percentage of vacancies?"
+- "Which regional offices have above-average admissions?"
+- "Give me region-wise intake capacity and admissions."
+- "Which course has the highest admissions? List the top 10 courses in demand."
+
+### ✅ Enhanced Answer Quality
+
+- Non-hallucinated, verifiable responses
+- Clear handling of unanswerable questions
+- Adaptive response formatting:
+  - Single value/name for simple queries
+  - Ranked lists for "Top N" queries
+  - Formatted tables for grouped data
+  - Visual representations when appropriate
+
+### ✅ Performance Optimization
+
+- Token usage optimization
+- Response time improvements
+- Caching frequently requested analyses
+- Efficient data structure usage
+
+### ✅ Technical Improvements
+
+- Python 3.9+ compatibility
+- Enhanced Pandas integration for data manipulation
+- Optimized Gemini API usage
+- Improved error handling and validation
+- Better data verification mechanisms
+
+### ✅ UI/UX Enhancements
+
+- Streamlined file upload process
+- Better query input interface
+- Enhanced result visualization
+- Mobile-responsive design improvements
+- Loading states and progress indicators
+
 ## Contributing
 
 1. Fork the repository
