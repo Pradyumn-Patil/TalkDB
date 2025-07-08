@@ -12,6 +12,7 @@
         body { font-family: 'Inter', sans-serif; }
         .chat-container::-webkit-scrollbar { width: 4px; }
         .chat-container::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 20px; }
+        .visualization-container img { max-width: 100%; height: auto; }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -28,10 +29,10 @@
                     <div class="max-w-lg lg:max-w-2xl rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none">
                         <p>Hello! I am your AI data analyst. Ask me anything about the 2024 engineering admissions data. Here are some example questions you can ask:</p>
                         <ul class="mt-2 list-disc list-inside space-y-1 text-gray-300">
-                            <li>What are the top 5 colleges by total intake?</li>
-                            <li>Show me colleges with highest admission rates</li>
-                            <li>Which regions have the most engineering seats?</li>
-                            <li>Compare government vs private college admissions</li>
+                            <li>Compare government vs private colleges</li>
+                            <li>Show distribution of colleges by region</li>
+                            <li>How many autonomous colleges are there?</li>
+                            <li>Which regions have the most minority institutions?</li>
                         </ul>
                     </div>
                 </div>
@@ -41,9 +42,9 @@
         <footer class="bg-gray-900 border-t border-gray-700 p-4 md:p-6">
             <div class="max-w-4xl mx-auto">
                 <div class="flex flex-wrap gap-2 mb-3">
-                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Top 5 colleges by total intake</button>
-                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Show colleges with 100% admission rate</button>
                     <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Compare government vs private colleges</button>
+                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Show colleges by region</button>
+                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">List autonomous colleges</button>
                 </div>
                 <div class="flex items-center bg-gray-800 rounded-xl p-2">
                     <input id="chat-input" type="text" placeholder="Ask a question..." class="w-full bg-transparent focus:outline-none px-3" />
@@ -80,13 +81,19 @@
 
                 if (result.error) {
                     appendMessage('bot', result.error);
-                } else if (result.data && result.data.rows) {
-                    // If we have tabular data
-                    appendMessage('bot', result.answer);
-                    appendTableMessage(result.data);
                 } else {
-                    // Text-only response
+                    // Add text response
                     appendMessage('bot', result.answer);
+                    
+                    // Add visualization if available
+                    if (result.visualization) {
+                        appendVisualization(result.visualization);
+                    }
+                    
+                    // Add table if available
+                    if (result.data && result.data.headers) {
+                        appendTableMessage(result.data);
+                    }
                 }
             } catch (error) {
                 removeLoadingIndicator();
@@ -113,6 +120,20 @@
             messageBubble.innerHTML = `<p>${formattedText}</p>`;
 
             messageWrapper.innerHTML = iconHtml;
+            messageWrapper.appendChild(messageBubble);
+            chatMessages.appendChild(messageWrapper);
+            scrollToBottom();
+        };
+
+        const appendVisualization = (imagePath) => {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = 'flex items-start gap-3 justify-start';
+            messageWrapper.innerHTML = `<div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>`;
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.className = 'max-w-full rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none visualization-container';
+            messageBubble.innerHTML = `<img src="${imagePath}" alt="Data Visualization" class="rounded-lg">`;
+            
             messageWrapper.appendChild(messageBubble);
             chatMessages.appendChild(messageWrapper);
             scrollToBottom();

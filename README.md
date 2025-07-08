@@ -125,7 +125,12 @@ Support for complex queries like:
 - Better query input interface
 - Enhanced result visualization
 - Mobile-responsive design improvements
-- Loading states and progress indicators
+- Loading states and progress indicators 
+
+
+
+## TECH STACKS we can use 
+Pandas Ai (https://docs.pandas-ai.com/v3/introduction)
 
 ## Contributing
 

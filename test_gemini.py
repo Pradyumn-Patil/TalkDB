@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # Your API key
-GEMINI_API_KEY = "AIzaSyD0eekHPdt7IjkIBC569y66caNqmLglyr0"
+GEMINI_API_KEY = ""
 
 try:
     print("Configuring Gemini...")
