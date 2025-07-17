@@ -1,212 +1,406 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineering Admissions Chatbot</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>CSV Chat - Working Version</title>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .chat-container::-webkit-scrollbar { width: 4px; }
-        .chat-container::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 20px; }
-        .visualization-container img { max-width: 100%; height: auto; }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .upload-area { border: 2px dashed #ddd; padding: 30px; text-align: center; border-radius: 8px; }
+        .upload-area:hover { border-color: #007bff; background: #f8f9ff; }
+        .messages { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; margin: 10px 0; background: #fafafa; }
+        .message { margin: 10px 0; }
+        .user-msg { text-align: right; }
+        .user-msg .bubble { background: #007bff; color: white; padding: 8px 12px; border-radius: 12px; display: inline-block; max-width: 70%; }
+        .bot-msg .bubble { background: #e9ecef; color: #333; padding: 8px 12px; border-radius: 12px; display: inline-block; max-width: 80%; }
+        .input-group { display: flex; gap: 10px; margin: 10px 0; }
+        .input-group input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .data-table { margin: 10px 0; overflow-x: auto; }
+        .data-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th, .data-table td { padding: 4px 8px; border: 1px solid #ddd; text-align: left; }
+        .data-table th { background: #f8f9fa; }
+        .debug { background: #f8f9fa; padding: 8px; margin: 8px 0; border-radius: 4px; font-family: monospace; font-size: 11px; }
+        .debug-section { background: #f0f8ff; border: 1px solid #b8daff; padding: 12px; margin: 10px 0; border-radius: 4px; }
+        .debug-section h4 { margin: 0 0 8px 0; color: #004085; }
+        .debug-steps { margin: 8px 0; }
+        .debug-step { padding: 4px 0; color: #666; }
+        .debug-code { background: #282c34; color: #abb2bf; padding: 8px; border-radius: 4px; overflow-x: auto; margin: 8px 0; }
     </style>
 </head>
-<body class="bg-gray-900 text-white">
-    <div class="flex flex-col h-screen">
-        <header class="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 p-4">
-            <h1 class="text-xl font-bold text-center">Engineering Admissions AI Analyst 🧠</h1>
-        </header>
+<body>
+    <div class="container">
+        <div class="section">
+            <h1>📊 CSV Chat Application</h1>
+            <p>Upload a CSV file and ask questions about your data using AI</p>
+        </div>
 
-        <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6">
-            <div id="chat-messages" class="space-y-6 max-w-4xl mx-auto">
-                <!-- Initial Bot Message -->
-                <div class="flex items-start gap-3 justify-start">
-                    <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>
-                    <div class="max-w-lg lg:max-w-2xl rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none">
-                        <p>Hello! I am your AI data analyst. Ask me anything about the 2024 engineering admissions data. Here are some example questions you can ask:</p>
-                        <ul class="mt-2 list-disc list-inside space-y-1 text-gray-300">
-                            <li>Compare government vs private colleges</li>
-                            <li>Show distribution of colleges by region</li>
-                            <li>How many autonomous colleges are there?</li>
-                            <li>Which regions have the most minority institutions?</li>
-                        </ul>
+        <div class="section">
+            <h3>📁 Upload Your Data</h3>
+            <div class="upload-area" onclick="triggerFileUpload()">
+                <p>Click here to select a CSV file</p>
+                <button class="btn" type="button">Choose CSV File</button>
+                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
+            </div>
+            <div id="uploadStatus"></div>
+            <div id="dataInfo" style="display: none;"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔧 API Test</h3>
+            <button class="btn" onclick="testGeminiAPI()">Test Gemini API Connection</button>
+            <div id="apiTestResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>💬 Chat with Your Data</h3>
+            <div id="messages" class="messages">
+                <div class="message bot-msg">
+                    <div class="bubble">
+                        👋 Hi! Upload a CSV file above and I'll help you analyze it.
+                        <br>You can ask questions like:
+                        <br>• "How many rows are in this data?"
+                        <br>• "What are the column names?"
+                        <br>• "Show me the first 5 rows"
                     </div>
                 </div>
             </div>
-        </main>
-
-        <footer class="bg-gray-900 border-t border-gray-700 p-4 md:p-6">
-            <div class="max-w-4xl mx-auto">
-                <div class="flex flex-wrap gap-2 mb-3">
-                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Compare government vs private colleges</button>
-                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">Show colleges by region</button>
-                    <button class="sample-question px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-sm rounded-full transition-colors">List autonomous colleges</button>
-                </div>
-                <div class="flex items-center bg-gray-800 rounded-xl p-2">
-                    <input id="chat-input" type="text" placeholder="Ask a question..." class="w-full bg-transparent focus:outline-none px-3" />
-                    <button id="send-button" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Send</button>
-                </div>
+            <div class="input-group">
+                <input type="text" id="questionInput" placeholder="Ask a question about your data..." disabled>
+                <button class="btn" id="sendBtn" disabled>Send</button>
             </div>
-        </footer>
+        </div>
     </div>
 
     <script>
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-button');
-        const chatMessages = document.getElementById('chat-messages');
-        const chatContainer = document.getElementById('chat-container');
-        const sampleButtons = document.querySelectorAll('.sample-question');
+        let isDataLoaded = false;
+        
+        console.log('Script loading...');
 
-        const sendMessage = async () => {
-            const query = chatInput.value.trim();
-            if (!query) return;
+        // Trigger file upload
+        function triggerFileUpload() {
+            console.log('triggerFileUpload called');
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                console.log('Clicking file input');
+                fileInput.click();
+            } else {
+                console.error('File input not found');
+            }
+        }
 
-            appendMessage('user', query);
-            chatInput.value = '';
-            showLoadingIndicator();
+        // Setup when page loads
+        window.addEventListener('load', function() {
+            console.log('Page loaded, setting up...');
+            
+            const fileInput = document.getElementById('fileInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const questionInput = document.getElementById('questionInput');
+            
+            // File selection handler
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    console.log('File selected:', e.target.files);
+                    if (e.target.files.length > 0) {
+                        handleFileUpload(e.target.files[0]);
+                    }
+                });
+            }
+            
+            // Send button
+            if (sendBtn) {
+                sendBtn.addEventListener('click', sendQuestion);
+            }
+            
+            // Enter key
+            if (questionInput) {
+                questionInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendQuestion();
+                    }
+                });
+            }
+            
+            console.log('Setup complete');
+        });
 
+        async function handleFileUpload(file) {
+            console.log('Uploading file:', file.name);
+            
+            // Validate file type
+            const validTypes = ['csv', 'xlsx', 'xls'];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            
+            if (!validTypes.includes(fileExt)) {
+                showStatus('Please select a CSV or Excel file', 'error');
+                return;
+            }
+            
+            showStatus('Uploading and processing file...', 'info');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('Upload response:', result);
+                
+                if (response.ok) {
+                    showStatus(`✅ ${result.message}`, 'success');
+                    showDataInfo(result.data_info);
+                    enableChat();
+                    isDataLoaded = true;
+                } else {
+                    showStatus(`❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showStatus(`❌ Upload failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('uploadStatus');
+            if (statusDiv) {
+                statusDiv.innerHTML = message;
+                statusDiv.className = `status ${type}`;
+            }
+        }
+
+        function showDataInfo(info) {
+            const dataDiv = document.getElementById('dataInfo');
+            if (dataDiv && info) {
+                let html = `
+                    <div class="status info">
+                        <strong>📋 Data loaded:</strong><br>
+                        • ${info.total_records || 0} records<br>
+                        • ${info.total_colleges || 0} colleges<br>`;
+                
+                if (info.total_intake > 0 || info.total_admissions > 0) {
+                    html += `
+                        • Total Intake: ${info.total_intake || 0}<br>
+                        • Total Admissions: ${info.total_admissions || 0}<br>
+                        • Vacancy Rate: ${info.overall_vacancy_percentage || 0}%<br>`;
+                }
+                
+                if (info.college_types) {
+                    const types = Object.entries(info.college_types)
+                        .map(([type, count]) => `${type} (${count})`)
+                        .join(', ');
+                    html += `• College Types: ${types}<br>`;
+                }
+                
+                if (info.total_courses) {
+                    html += `• Courses: ${info.total_courses}<br>`;
+                }
+                
+                html += `</div>`;
+                dataDiv.innerHTML = html;
+                dataDiv.style.display = 'block';
+            }
+        }
+
+        function enableChat() {
+            document.getElementById('questionInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('questionInput').focus();
+        }
+
+        async function sendQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const question = questionInput.value.trim();
+            
+            if (!question || !isDataLoaded) return;
+            
+            addMessage(question, 'user');
+            questionInput.value = '';
+            
+            const loadingId = addMessage('🤔 Thinking...', 'bot', true);
+            
             try {
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query })
+                    body: JSON.stringify({ question: question })
                 });
-
-                removeLoadingIndicator();
+                
                 const result = await response.json();
-
-                if (result.error) {
-                    appendMessage('bot', result.error);
+                
+                // Remove loading message
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.remove();
+                
+                if (response.ok) {
+                    addBotResponse(result);
                 } else {
-                    // Add text response
-                    appendMessage('bot', result.answer);
-                    
-                    // Add visualization if available
-                    if (result.visualization) {
-                        appendVisualization(result.visualization);
-                    }
-                    
-                    // Add table if available
-                    if (result.data && result.data.headers) {
-                        appendTableMessage(result.data);
-                    }
+                    addMessage(`❌ ${result.error}`, 'bot');
                 }
             } catch (error) {
-                removeLoadingIndicator();
-                appendMessage('bot', 'Failed to connect to the server. Please ensure the Flask app is running.');
-                console.error('Error:', error);
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.remove();
+                addMessage(`❌ Error: ${error.message}`, 'bot');
             }
-        };
+        }
 
-        const appendMessage = (sender, text) => {
-            const isBot = sender === 'bot';
-            const messageWrapper = document.createElement('div');
-            messageWrapper.className = `flex items-start gap-3 ${isBot ? 'justify-start' : 'justify-end'}`;
+        function addMessage(text, sender, isLoading = false) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            const messageId = isLoading ? 'loading-' + Date.now() : '';
+            
+            messageDiv.className = `message ${sender}-msg`;
+            if (messageId) messageDiv.id = messageId;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerHTML = text.replace(/\n/g, '<br>');
+            
+            messageDiv.appendChild(bubble);
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+            
+            return messageId;
+        }
 
-            let iconHtml = '';
-            if (isBot) {
-                iconHtml = `<div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>`;
+        function addBotResponse(result) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot-msg';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            
+            let content = result.answer.replace(/\n/g, '<br>');
+            
+            // Add data table if available
+            if (result.data && result.data.type === 'dataframe') {
+                content += formatDataTable(result.data);
             }
-
-            const messageBubble = document.createElement('div');
-            messageBubble.className = `max-w-lg lg:max-w-2xl rounded-xl p-4 ${isBot ? 'bg-gray-800 text-gray-200 rounded-tl-none' : 'bg-blue-600 text-white rounded-br-none'}`;
             
-            // Convert newlines to <br> tags
-            const formattedText = text.replace(/\n/g, '<br>');
-            messageBubble.innerHTML = `<p>${formattedText}</p>`;
-
-            messageWrapper.innerHTML = iconHtml;
-            messageWrapper.appendChild(messageBubble);
-            chatMessages.appendChild(messageWrapper);
-            scrollToBottom();
-        };
-
-        const appendVisualization = (imagePath) => {
-            const messageWrapper = document.createElement('div');
-            messageWrapper.className = 'flex items-start gap-3 justify-start';
-            messageWrapper.innerHTML = `<div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>`;
+            // Add debug information if available
+            if (result.debug_info) {
+                content += formatDebugInfo(result.debug_info);
+            }
             
-            const messageBubble = document.createElement('div');
-            messageBubble.className = 'max-w-full rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none visualization-container';
-            messageBubble.innerHTML = `<img src="${imagePath}" alt="Data Visualization" class="rounded-lg">`;
+            // Add query debug info (legacy)
+            if (result.query_used) {
+                content += `<div class="debug"><strong>Query:</strong> ${result.query_used}</div>`;
+            }
             
-            messageWrapper.appendChild(messageBubble);
-            chatMessages.appendChild(messageWrapper);
-            scrollToBottom();
-        };
-
-        const appendTableMessage = (data) => {
-            const messageWrapper = document.createElement('div');
-            messageWrapper.className = 'flex items-start gap-3 justify-start';
-            messageWrapper.innerHTML = `<div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>`;
+            bubble.innerHTML = content;
+            messageDiv.appendChild(bubble);
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function formatDebugInfo(debugInfo) {
+            let html = '<div class="debug-section">';
+            html += '<h4>🔍 Query Processing Debug Info</h4>';
             
-            const messageBubble = document.createElement('div');
-            messageBubble.className = 'max-w-full rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none';
-
-            let tableHtml = '<div class="overflow-x-auto rounded-lg border border-gray-700"><table class="min-w-full divide-y divide-gray-700"><thead class="bg-gray-800"><tr>';
-            data.headers.forEach(header => {
-                tableHtml += `<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">${header.replace(/_/g, ' ')}</th>`;
-            });
-            tableHtml += '</tr></thead><tbody class="bg-gray-900 divide-y divide-gray-700">';
-            data.rows.forEach(row => {
-                tableHtml += '<tr class="hover:bg-gray-800/50">';
-                data.headers.forEach(header => {
-                    const value = typeof row[header] === 'number' ? row[header].toLocaleString() : row[header];
-                    tableHtml += `<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-200">${value}</td>`;
+            // Show original query
+            html += `<div class="debug-step"><strong>Original Query:</strong> "${debugInfo.original_query}"</div>`;
+            
+            // Show processing steps
+            if (debugInfo.processing_steps && debugInfo.processing_steps.length > 0) {
+                html += '<div class="debug-steps"><strong>Processing Steps:</strong>';
+                debugInfo.processing_steps.forEach(step => {
+                    html += `<div class="debug-step">• ${step}</div>`;
                 });
-                tableHtml += '</tr>';
-            });
-            tableHtml += '</tbody></table></div>';
-
-            messageBubble.innerHTML = tableHtml;
-            messageWrapper.appendChild(messageBubble);
-            chatMessages.appendChild(messageWrapper);
-            scrollToBottom();
-        };
-
-        const showLoadingIndicator = () => {
-            const loadingHtml = `
-                <div id="loading-indicator" class="flex items-start gap-3 justify-start">
-                    <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">AI</div>
-                    <div class="max-w-lg lg:max-w-2xl rounded-xl p-4 bg-gray-800 text-gray-200 rounded-tl-none">
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.1s;"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
-                        </div>
-                    </div>
-                </div>`;
-            chatMessages.insertAdjacentHTML('beforeend', loadingHtml);
-            scrollToBottom();
-        };
-
-        const removeLoadingIndicator = () => {
-            const indicator = document.getElementById('loading-indicator');
-            if (indicator) {
-                indicator.remove();
+                html += '</div>';
             }
-        };
-
-        const scrollToBottom = () => {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        };
-
-        sendButton.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
+            
+            // Show data context
+            if (debugInfo.data_context) {
+                html += `<div class="debug-step"><strong>Data Shape:</strong> ${debugInfo.data_context.shape[0]} rows × ${debugInfo.data_context.shape[1]} columns</div>`;
+                html += `<div class="debug-step"><strong>Columns:</strong> ${debugInfo.data_context.columns.join(', ')}</div>`;
             }
-        });
-        sampleButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                chatInput.value = button.textContent;
-                sendMessage();
-            });
-        });
+            
+            // Show generated pandas code
+            if (debugInfo.llm_response && debugInfo.llm_response.generated_code) {
+                html += '<div><strong>Generated Pandas Code:</strong></div>';
+                html += `<div class="debug-code">${escapeHtml(debugInfo.llm_response.generated_code)}</div>`;
+            }
+            
+            // Show execution result preview
+            if (debugInfo.execution_result) {
+                html += `<div class="debug-step"><strong>Result Type:</strong> ${debugInfo.execution_result.result_type}</div>`;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function formatDataTable(data) {
+            if (!data.headers || !data.rows) return '';
+            
+            let html = '<div class="data-table"><table>';
+            html += '<tr>' + data.headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+            
+            const maxRows = Math.min(data.rows.length, 10);
+            for (let i = 0; i < maxRows; i++) {
+                const row = data.rows[i];
+                html += '<tr>' + data.headers.map(h => `<td>${row[h] || ''}</td>`).join('') + '</tr>';
+            }
+            
+            if (data.rows.length > maxRows) {
+                html += `<tr><td colspan="${data.headers.length}" style="text-align: center; font-style: italic;">... and ${data.rows.length - maxRows} more rows</td></tr>`;
+            }
+            
+            html += '</table></div>';
+            return html;
+        }
+
+        // Test Gemini API connection
+        async function testGeminiAPI() {
+            const resultDiv = document.getElementById('apiTestResult');
+            resultDiv.innerHTML = '<div class="status info">⏳ Testing Gemini API connection...</div>';
+            
+            try {
+                const response = await fetch('/test_gemini');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    resultDiv.innerHTML = `
+                        <div class="status success">
+                            ✅ ${result.message}
+                            <br><small>Response: "${result.test_response}"</small>
+                        </div>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="status error">
+                            ❌ ${result.message}
+                            <br><small>Error: ${result.error || result.details}</small>
+                        </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Failed to test API connection
+                        <br><small>Error: ${error.message}</small>
+                    </div>`;
+            }
+        }
     </script>
 </body>
 </html>
