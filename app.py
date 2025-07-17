@@ -12,6 +12,11 @@ import google.generativeai as genai
 from data_processor import AdmissionDataProcessor
 from analytics_engine import AdvancedAnalyticsEngine
 from pandas_query_processor import PandasQueryProcessor
+try:
+    from enhanced_query_processor import EnhancedQueryProcessor
+    USE_ENHANCED_PROCESSOR = True
+except ImportError:
+    USE_ENHANCED_PROCESSOR = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -81,7 +86,10 @@ def load_default_data():
                 data_processor = AdmissionDataProcessor(filepath, api_key)
                 if data_processor.process_data():
                     analytics_engine = AdvancedAnalyticsEngine(data_processor)
-                    pandas_processor = PandasQueryProcessor(data_processor, api_key)
+                    if USE_ENHANCED_PROCESSOR:
+                        pandas_processor = EnhancedQueryProcessor(data_processor, api_key)
+                    else:
+                        pandas_processor = PandasQueryProcessor(data_processor, api_key)
                     logger.info(f"Successfully loaded default data from {filename}")
                     return True
             except Exception as e:
@@ -199,8 +207,12 @@ def upload_file():
         
         logger.info("Step 10b: Creating pandas query processor")
         try:
-            pandas_processor = PandasQueryProcessor(data_processor, api_key)
-            logger.info("Step 10c: PandasQueryProcessor created successfully")
+            if USE_ENHANCED_PROCESSOR:
+                pandas_processor = EnhancedQueryProcessor(data_processor, api_key)
+                logger.info("Step 10c: EnhancedQueryProcessor created successfully")
+            else:
+                pandas_processor = PandasQueryProcessor(data_processor, api_key)
+                logger.info("Step 10c: PandasQueryProcessor created successfully")
         except Exception as e:
             logger.error(f"Step 10b FAILED: Error creating PandasQueryProcessor: {e}")
             import traceback
@@ -294,8 +306,11 @@ def chat():
         
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'error': 'An error occurred while processing your query.',
+            'error_details': str(e),
             'suggestions': ['Please try rephrasing your question or upload a new data file.']
         }), 500
 
